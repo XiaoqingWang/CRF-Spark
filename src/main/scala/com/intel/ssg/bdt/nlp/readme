@@ -1,0 +1,40 @@
+CRF基于spark实现的过程与源码分析
+
+Crf-spark实现时基于spark的LBFGS算法实现，由于在spark的mllib库中实现了LBFGS算法，因此在使用crf训练时调用该算法在spark平台上将会使迭代更加快速。缩短训练时间。
+
+源码地址：https://github.com/lihait/CRF-Spark
+
+源码是scala语言写的，将源码下载后使用sbt工具打包成jar文件在项目中导入即可使用crf-spark中方法。
+
+src目录下有main和test两个文件夹，其中test中是作者用来测试的代码。
+
+Main目录下是主要的实现scala代码，有七个文件:
+
+
+最重要的是CRF.scala 、CRFModel.scala、CRFWithLBFGS.scala
+
+CRF.scala：CRF.scala中有用来训练模型的train函数，默认的输入参数是：freq= 1, regParam = 0.5, maxIterations = 1000, tolerance = 1E-3, regularization =L2。
+
+在使用时可对这几个参数进行设置。
+
+CRFModel.scala: CRFModel.scala中主要的函数是testCRF、predict，加载训练得到的模型文件对训练数据进行结果的预测。还有save函数可以用来保存模型文件到本地。
+
+CRFWithLBFGS.scala：CRFWithLBFGS.scala文件中主要是调用spark机器学习库中的LBFGS算法。最重要的CostFun函数在该文件中实现，还有对L1和L2模型的实现调用。
+
+ 
+
+使用crf-spark时，训练文件可以从hdfs上读取，然后使用textFile函数转换为RDD，这样可以将训练数据分块，在集群上并行执行。训练数据的格式可以用户自定义，一般是词、特征、结果。
+
+Template文件需要用户自己定义，之前从本地读入即可。之后调用train函数对数据进行训练，训练出模型后可以调用save函数将模型保存到本地或者hdfs上，方便下次直接加载使用。
+
+测试数据从hdfs上读取，也可以分块并行测试，使用CRFModel的对象调用predict函数得出预测结果，并可以保存到hdfs上。
+
+ 
+
+下面是我基于crf-spark实现的一个例子，在5个节点的spark集群上测试通过。训练数据集为10W条左右。测试数据为2W条左右。训练时间为4分钟左右，正确率为97%左右。
+
+
+
+
+
+版权声明：本文为博主原创文章，未经博主允许不得转载。
